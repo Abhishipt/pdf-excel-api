@@ -10,9 +10,8 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libgl1-mesa-glx \
     poppler-utils \
-    tesseract-ocr \
-    tesseract-ocr-hin \
     && rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /app
 COPY . /app
