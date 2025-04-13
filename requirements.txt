@@ -3,7 +3,4 @@ flask-cors
 camelot-py[cv]
 PyPDF2
 openpyxl
-pytesseract
-pdf2image
-Pillow
 gunicorn
