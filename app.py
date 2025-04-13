@@ -62,9 +62,13 @@ def convert_pdf_to_excel():
 
         wb.save(output_excel)
 
-    except Exception as e:
-        print("❌ Error during Camelot processing:", e)
-        return 'Conversion failed.', 500
+    import traceback
+
+except Exception as e:
+    print("❌ Error during Camelot processing:")
+    traceback.print_exc()  # <- Shows detailed error in Render logs
+    return 'Conversion failed.', 500
+
 
     delete_file_later(input_pdf)
     delete_file_later(output_excel)
