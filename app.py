@@ -64,7 +64,7 @@ def convert_pdf_to_excel():
 
         print("⚙️ Running OCR fallback to extract all text...")
         raw_ws = wb.create_sheet(title="Raw_Text")
-        images = convert_from_path(input_pdf)
+        images = convert_from_path(input_pdf, dpi=100)  # Lower DPI = less memory
         for page_num, img in enumerate(images, start=1):
             text = pytesseract.image_to_string(img, lang='eng+hin')
             raw_ws.append([f"-- Page {page_num} --"])
