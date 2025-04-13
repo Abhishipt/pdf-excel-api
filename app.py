@@ -7,10 +7,6 @@ import threading
 import time
 import camelot
 import openpyxl
-from pdf2image import convert_from_path
-import pytesseract
-from PyPDF2 import PdfReader
-from PIL import Image
 
 print("✅ app.py loaded successfully")
 
@@ -29,7 +25,7 @@ def delete_file_later(path, delay=300):
 
 @app.route('/')
 def home():
-    return jsonify({'status': 'PDF to Excel (Camelot + OCR, Optimized) API is running ✅'}), 200
+    return jsonify({'status': 'PDF to Excel (Camelot-Only) API is running ✅'}), 200
 
 @app.route('/convert', methods=['POST'])
 def convert_pdf_to_excel():
@@ -45,44 +41,29 @@ def convert_pdf_to_excel():
 
     try:
         wb = openpyxl.Workbook()
-        table_ws = wb.active
-        table_ws.title = "Tables"
-        row_index = 1
+        ws = wb.active
+        ws.title = "Extracted_Tables"
 
-        print("🧪 Trying Camelot (lattice)...")
-        try:
-            tables = camelot.read_pdf(input_pdf, pages='all', flavor='lattice')
-            print(f"✅ Camelot found {tables.n} tables")
+        print("🧪 Extracting tables with Camelot (lattice)...")
+        tables = camelot.read_pdf(input_pdf, pages='all', flavor='lattice')
 
-            if tables.n > 0:
-                for table in tables:
-                    data = table.df.values.tolist()
-                    for row in data:
-                        table_ws.append(row)
-                        row_index += 1
-        except Exception as e:
-            print("❌ Camelot failed:", e)
+        if tables.n == 0:
+            print("❌ No tables found.")
+            delete_file_later(input_pdf)
+            return 'No extractable tables found.', 400
 
-        # 🧠 Memory-safe OCR fallback
-        print("⚙️ Running OCR fallback, page-by-page...")
-        raw_ws = wb.create_sheet(title="Raw_Text")
-        reader = PdfReader(input_pdf)
-        total_pages = len(reader.pages)
+        print(f"✅ Found {tables.n} tables")
 
-        for page_num in range(1, total_pages + 1):
-            print(f"🔍 OCRing Page {page_num}")
-            images = convert_from_path(input_pdf, dpi=100, first_page=page_num, last_page=page_num)
-            img = images[0]
-            text = pytesseract.image_to_string(img, lang='eng+hin')
-            raw_ws.append([f"-- Page {page_num} --"])
-            for line in text.splitlines():
-                if line.strip():
-                    raw_ws.append([line])
+        for table_index, table in enumerate(tables):
+            ws.append([f"Table {table_index + 1}"])
+            for row in table.df.values.tolist():
+                ws.append(row)
+            ws.append([""])  # Add space between tables
 
         wb.save(output_excel)
 
     except Exception as e:
-        print("❌ Error during conversion:", e)
+        print("❌ Error during Camelot processing:", e)
         return 'Conversion failed.', 500
 
     delete_file_later(input_pdf)
