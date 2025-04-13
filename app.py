@@ -11,7 +11,7 @@ from pdf2image import convert_from_path
 import pytesseract
 from PIL import Image
 
-print("✅ app.py loaded successfully")  # Debug check
+print("✅ app.py loaded successfully")
 
 app = Flask(__name__)
 CORS(app)
@@ -28,7 +28,7 @@ def delete_file_later(path, delay=300):
 
 @app.route('/')
 def home():
-    return jsonify({'status': 'PDF to Excel (Camelot + OCR fallback) API is running ✅'}), 200
+    return jsonify({'status': 'PDF to Excel (Camelot + OCR Sheet) API is running ✅'}), 200
 
 @app.route('/convert', methods=['POST'])
 def convert_pdf_to_excel():
@@ -44,37 +44,33 @@ def convert_pdf_to_excel():
 
     try:
         wb = openpyxl.Workbook()
-        ws = wb.active
+        table_ws = wb.active
+        table_ws.title = "Tables"
         row_index = 1
-        text_found = False
 
+        print("🧪 Trying Camelot (lattice)...")
         try:
-            print("🧪 Trying Camelot (lattice)...")
             tables = camelot.read_pdf(input_pdf, pages='all', flavor='lattice')
             print(f"✅ Camelot found {tables.n} tables")
-            if tables and tables.n > 0:
+
+            if tables.n > 0:
                 for table in tables:
                     data = table.df.values.tolist()
                     for row in data:
-                        ws.append(row)
+                        table_ws.append(row)
                         row_index += 1
-                text_found = True
         except Exception as e:
             print("❌ Camelot failed:", e)
 
-        if not text_found:
-            print("⚠️ Falling back to OCR...")
-            images = convert_from_path(input_pdf)
-            for img in images:
-                text = pytesseract.image_to_string(img, lang='eng+hin')
-                for line in text.splitlines():
-                    ws.append([line])
-                    row_index += 1
-            text_found = True
-
-        if not text_found:
-            delete_file_later(input_pdf)
-            return 'No extractable content found.', 400
+        print("⚙️ Running OCR fallback to extract all text...")
+        raw_ws = wb.create_sheet(title="Raw_Text")
+        images = convert_from_path(input_pdf)
+        for page_num, img in enumerate(images, start=1):
+            text = pytesseract.image_to_string(img, lang='eng+hin')
+            raw_ws.append([f"-- Page {page_num} --"])
+            for line in text.splitlines():
+                if line.strip():
+                    raw_ws.append([line])
 
         wb.save(output_excel)
 
