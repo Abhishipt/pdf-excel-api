@@ -11,6 +11,8 @@ from pdf2image import convert_from_path
 import pytesseract
 from PIL import Image
 
+print("✅ app.py loaded successfully")  # Debug check
+
 app = Flask(__name__)
 CORS(app)
 
@@ -46,7 +48,6 @@ def convert_pdf_to_excel():
         row_index = 1
         text_found = False
 
-        # Try to extract tables using Camelot (lattice)
         try:
             tables = camelot.read_pdf(input_pdf, pages='all', flavor='lattice')
             if tables and tables.n > 0:
@@ -59,7 +60,6 @@ def convert_pdf_to_excel():
         except Exception as e:
             print("❌ Camelot failed:", e)
 
-        # OCR fallback if no tables found
         if not text_found:
             images = convert_from_path(input_pdf)
             for img in images:
