@@ -49,9 +49,7 @@ def convert_pdf_to_excel():
         text_found = False
 
         try:
-            print("🧪 Trying Camelot (lattice)...")
             tables = camelot.read_pdf(input_pdf, pages='all', flavor='lattice')
-            print(f"✅ Camelot found {tables.n} tables")
             if tables and tables.n > 0:
                 for table in tables:
                     data = table.df.values.tolist()
@@ -63,7 +61,6 @@ def convert_pdf_to_excel():
             print("❌ Camelot failed:", e)
 
         if not text_found:
-            print("⚠️ Falling back to OCR...")
             images = convert_from_path(input_pdf)
             for img in images:
                 text = pytesseract.image_to_string(img, lang='eng+hin')
