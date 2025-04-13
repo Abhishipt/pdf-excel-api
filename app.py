@@ -9,6 +9,7 @@ import camelot
 import openpyxl
 from pdf2image import convert_from_path
 import pytesseract
+from PyPDF2 import PdfReader
 from PIL import Image
 
 print("✅ app.py loaded successfully")
@@ -28,7 +29,7 @@ def delete_file_later(path, delay=300):
 
 @app.route('/')
 def home():
-    return jsonify({'status': 'PDF to Excel (Camelot + OCR Sheet) API is running ✅'}), 200
+    return jsonify({'status': 'PDF to Excel (Camelot + OCR, Optimized) API is running ✅'}), 200
 
 @app.route('/convert', methods=['POST'])
 def convert_pdf_to_excel():
@@ -62,10 +63,16 @@ def convert_pdf_to_excel():
         except Exception as e:
             print("❌ Camelot failed:", e)
 
-        print("⚙️ Running OCR fallback to extract all text...")
+        # 🧠 Memory-safe OCR fallback
+        print("⚙️ Running OCR fallback, page-by-page...")
         raw_ws = wb.create_sheet(title="Raw_Text")
-        images = convert_from_path(input_pdf, dpi=100)  # Lower DPI = less memory
-        for page_num, img in enumerate(images, start=1):
+        reader = PdfReader(input_pdf)
+        total_pages = len(reader.pages)
+
+        for page_num in range(1, total_pages + 1):
+            print(f"🔍 OCRing Page {page_num}")
+            images = convert_from_path(input_pdf, dpi=100, first_page=page_num, last_page=page_num)
+            img = images[0]
             text = pytesseract.image_to_string(img, lang='eng+hin')
             raw_ws.append([f"-- Page {page_num} --"])
             for line in text.splitlines():
