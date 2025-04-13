@@ -1,0 +1,6 @@
+Flask
+flask-cors
+camelot-py[cv]
+PyPDF2
+openpyxl
+gunicorn
